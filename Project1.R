@@ -1,4 +1,3 @@
-library(Rlab)
 # Task 1 ----------------------------------------------------------------
 # The following Task tackles first the distribution of throwing one coin,
 # and later in the number of heads when throwing arbitrary number of coin.
@@ -51,8 +50,11 @@ takeBalls <- sample(urn,
                     size = 4,
                     replace = FALSE)
 n <- 100000
-sampledBernoulli_a = rbern(n,0.5177)
+sampledBernoulli_a = rbinom(n = n,
+                            size = 1,
+                            prob = 0.5177)
 x <- mean(sampledBernoulli_a)
+x
 
 # Task 2b ----------------------------------------------------------------
 # When rolling two dice simultaneously 24 times, we are interested in the event that
@@ -64,17 +66,28 @@ takeBalls <- sample(urn,
                     size = 2,
                     replace = FALSE)
 n <- 100000
-sampledBernoulli_b = replicate (24, rbern(n,1-(35/36)^24), simplify = "array")
+numOfRolls <- 24
+# Using the replicate function we repeat the experiment of throwing two dice.
+sampledBernoulli_b = replicate(n = numOfRolls,
+                               rbinom(n = n,
+                                      size = 1,
+                                      prob = 1-(35/36)^numOfRolls),
+                               simplify = "array")
 x <- mean(sampledBernoulli_b)
-
+x
+# RESULT: After calculating the means of both scenarios and trying sampling by ourselves
+# we have come to the conclusion that the first event is more probable.
 # Task 3 ----------------------------------------------------------------
 # Simulating the lottery "6 out of 49". 
-urn <- c(1:49) # An urn describing the lottery.
 N <- 10^8 # NOTE: lower for optimization purposes. 
-m = integer(7) # Initialize vector of 7 zeros.
+m = integer(7) # Initialize vector of 7 zeros for calculating the mean.
+# choose(n,k) - Number of ways to choose k elements from a set of n elements.
 
-for (k in 0:6){
-  sample = rbern (N, (factorial(k) * factorial(49 - k)/factorial (49)))
-  m[k+1] = mean(sample)
+for (k in 0:6) {
+  s = rbinom(n = N,
+             size = 1,
+             prob = (choose(43,6-k)*choose(6,k)/choose(49,6)))
+  m[k+1] = mean(s)
 }
+# Output the mean of the results for success for each of the six numbers.
 m
