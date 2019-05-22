@@ -1,41 +1,13 @@
-## The Inverse Transform Method
-
-# The probability integral transform states that if X is a continuous random variable with
-# cumulative distribution function Fx, then the random varible Y = Fx(X) has a uniform distribution on [0,1].
-# If Y has a uniform distribution on [0,1] and if X has a cumulative distribution Fx,
-# then the random variable Fx^(-1)(Y) has the same distribution as X.
-
-# Given a continuous uniform varialbe U in [0,1] and an invertible cumulative distribution function Fx,
-# the random variable X = Fx^(-1) (U) has distribution Fx.
-#       1. Generate a random number u from the standard uniform distribution in [0,1]
-#       2. Compute the value x such that Fx(x) = u.
-#       3. Take x to be the random num drawn from the distribution Fx.
-
-# Example: suppose X is uniformly distributed on [0,1], then the CDF is given by
-# F(x) = 0 : x<0
-#        x : 0<=x<1
-#        1 : x>=1
-
-# The method is very simple, so I'll describe it in simple words. First, take cumulative distribution function FX
-# of some distribution that you want to sample from. The function takes as input some value x and tells you what is the probability of obtaining X≤x
-# So FX(x)=Pr(X≤x)=p inverse of such function function, F−1X would take p as input and return x. Notice that p's are uniformly distributed -- this could be used for sampling from any FX
-# if you know F−1X
-
-## a) Suppose that X takes values 0 and 1, with equal probability. then the CDF is given by
-# F(x) = 0    : x<0
-#        1/2  : 0<=x<1
-#        1    : x>=1
-
 ## Problem 1 -----------------------------------------------------------------------------
-# Let X ∼ Bernoulli(1, p) for some p ∈ [0, 1].
-# Sampling using the rbinom(·,1,p) method.
+
+# X ~ Bernoulli(1, p) using the rbinom function.
 N <- 10^5
 X <- rbinom(n = N,
             size = 1,
             prob = 0.5)
 
 # Sampling using the inverse transform method.
-inverseTransformMethod <- function() {
+bernoulliInverse <- function() {
   # n : number of samples
   # p : probability of getting 0s
   n <- 10^5
@@ -57,68 +29,47 @@ inverseTransformMethod <- function() {
 #  sample
   return(s)
 }
-
+B<-bernoulliInverse() #random variable generated using the inverse transform method  
 # Compare samples using histograms for both samples.
 par(mfrow=c(2,1))
 hist(X)
-hist(inverseTransformMethod)
+hist(B)
 
 ## Problem 2 -----------------------------------------------------------------------------
 expRandVar <- function(n,lambda){
   oneZeroVec <- runif(n,min=0,max=1)
   s <- c()
-  
   for(i in 1:n){
     x <- (-1/lambda)*log2(1-oneZeroVec[i])
     s <- append(s,x);
   }
   return(s)
 }
-
-hist(expRandVar(10^5,2))
-par(new=TRUE) #plot superposition
-plot(density(expRandVar(10^5,2)))
+E<-expRandVar(10^5,2) #E is an exponentially distributed random variable using the inverse transform method
+plot(hist(E),xlim=c(0.0,8.0),ylim=c(0,50000),main = 'Histogram of the Random Variable using Inverse transform method vs. the density of the exponential distribution')#histogram of the exponentially distributed random variable using the inverse transform method
+par(new=TRUE, ann=FALSE) #plot superposition
+plot(density(rexp(10^5,rate=2)),ann=FALSE, xlim=c(0.0,8.0),axes=FALSE)#plotting the density of the exponential distribution using the Rlab function rexp
 
 ## Problem 3 -----------------------------------------------------------------------------
-#Now simulate a normally distributed random variable in the following way: Simulate a random
-#vector X = (X1,X2) in R2 using polar coordinates, where the radius is the square root of an
-#exponentially distributed random variable with parameter 1 , and its angle is uniformly distributed 2
-#on [0, 2π]. Then X1 ∼ Normal(0, 1). Compare a corresponding histogram of your simulation with the density of Normal(0, 1) 
-# in a single plot (choose suitable scalings).
-
-circleUniDist <- function(n){
+NormDist <- function(n){
   # n : number of points
   oneZeroVec <- runif(n,min=0,max=1)
-  angle <- (oneZeroVec*1000)%%360
-  radius <- sqrt(exp(1/2))
-  s <- c(radius, angle)
-  return(s)
+  angle <- (oneZeroVec*pi)
+  radius <- sqrt(rexp(n,rate=1/2))
+  X <- radius * cos(angle)
+  return(X)
 }
-hist(circleUniDist(10^5))
-hist(rnorm(10^5, mean=0, sd=1))
-par(new=TRUE) #plot superposition
-plot(density(rnorm(10^5, mean=0, sd=1)))
+hist(NormDist(10^5),xlim=c(-4.0,4.0), main = 'Histogram of the Random Variable X1 vs. the density of Normal(0,1)') #plotting the 
+par(new=TRUE) #plot superposition 
+plot(density(rnorm(10^5, mean=0, sd=1)),xlim=c(-4.0,4.0),axes=FALSE,ann=FALSE) #plotting the probability density function of the normal distribution with mean=0 and variance=1
 
 
 ### Problem 4 -----------------------------------------------------------------------------
-# The linear congruential generator is a pseudo random number generator.
-# It is not truely random but deterministic in nature, however it attemps to mimic
-# the behaviour of true randomness. 
-# The LGC works by taking an initial value, multiplying it by a number and adding another number to it,
-# then reducing modular another vlaue. 
-
-# Xi = (a·Xi−1+b) mod m, a,b,m∈N
-# m > 1 is the modulus
-# a {1,2,...,m-1} is the multiplier
-# b {0,1,...,m-1} is the constant
-# X0 {0,1,...,m-1} is the seed aka initial value
-# NOTE: In a run of an arbitrary length, the number of distinct values along the Xi-1 cannot exceed m !
-
 LCG <- function(a,b,m,n,SEED){
   X <- c() # empty vector to contain results
   Xi <- SEED # initialisation of seed
   for (j in 1:n) {
-    Xi <- (a*Xi + b) %% m
+    Xi <- (a*Xi + b) %% m 
     X[j] <- Xi
   }
   return(X)
@@ -154,16 +105,18 @@ LCGextended <- function(a,b,m,n,SEED){
 }
 
 library(rgl)
-k<-10^3
+k<-10^5 #number of points
 k2<-k-2
 k1<-k-1
 #plot the first sequence
-s<-LCGextended(16807,0,(2^31)-1,k, 5)
+s<-LCGextended(16807,0,(2^31)-1,k, 5) #pseudo random numbers generation using the first setting 
 scatter3D(s[1:k2],s[2:k1],s[3:k])
-library("plot3Drgl")
+library(plot3Drgl)
 plotrgl()
 #plot the second sequence
 s2<-LCGextended(65539,0,(2^31),k, 5)
-scatter3D(s2[1:k2],s2[2:k1],s2[3:k])
+scatter3D(s2[1:k2],s2[2:k1],s2[3:k])  #pseudo random numbers generation using the second setting 
 plotrgl()
-#I don't see the difference
+#we notice that the first parameters result in random numbers , while for the second set of parameters, we notice 
+#the distribution of the generated numbers on a fixed number of planes in the space, which means that the generated numbers are not that random
+#according to this, the first setting is better suited for random numbers generation
